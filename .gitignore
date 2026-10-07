@@ -1,0 +1,20 @@
+# This repo is an add-on that sits in the root of an SPP Classics V2 install.
+# Everything that belongs to SPP itself is ignored.
+/SPP_Server/
+/Git/
+/Server_Start.bat
+/Server_Update.bat
+
+# Personal tweaks (SQL for your own characters, apply log)
+/MyTweaks/
+
+# Dashboard local state - dashboard.json holds the GM account password
+/Dashboard/dashboard.json
+/Dashboard/logs/
+
+# Editor / OS clutter
+*.bak
+*.old
+Thumbs.db
+desktop.ini
+.vscode/

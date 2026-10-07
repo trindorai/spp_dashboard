@@ -1,0 +1,5 @@
+## Interface: 30300
+## Title: StartAttackMacros
+## Notes: /sam - replace attack abilities on your bars with "/startattack + /cast" macros. /sam undo puts them back.
+## SavedVariablesPerCharacter: StartAttackMacrosDB
+StartAttackMacros.lua

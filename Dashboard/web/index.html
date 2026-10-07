@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPP Control</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --bg:#0d0f14; --bg2:#12151c; --panel:#171b24; --panel2:#1d2230; --line:#262c3b; --line2:#323a4d;
+  --text:#e6e8ee; --muted:#8a93a6; --dim:#5d667a;
+  --gold:#e8b84a; --gold2:#f6d58a; --goldbg:rgba(232,184,74,.12);
+  --green:#4cc38a; --greenbg:rgba(76,195,138,.12); --red:#ef5b5b; --redbg:rgba(239,91,91,.12);
+  --amber:#f0a443; --amberbg:rgba(240,164,67,.12); --blue:#5aa9ff; --bluebg:rgba(90,169,255,.12);
+  --r:12px; --mono:ui-monospace,"Cascadia Mono",Consolas,"SFMono-Regular",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--gold)}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+/* sidebar */
+.side{background:linear-gradient(180deg,#11141b,#0c0e13);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
+.brand .logo{width:34px;height:34px;border-radius:9px;background:radial-gradient(circle at 30% 30%,#f9e3a6,#c8902a 60%,#6d4a12);display:grid;place-items:center;box-shadow:0 0 18px rgba(232,184,74,.25)}
+.brand .logo svg{width:20px;height:20px}
+.brand b{display:block;font-size:15px;letter-spacing:.3px}
+.brand small{color:var(--muted);font-size:12px}
+.nav button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;color:var(--muted);width:100%;box-sizing:border-box}
+.nav button svg{width:18px;height:18px;flex:none;opacity:.85}
+.nav button:hover{background:var(--panel);color:var(--text)}
+.nav button.on{background:var(--goldbg);color:var(--gold2)}
+.nav .badge{margin-left:auto;font-size:11px;background:var(--redbg);color:var(--red);border-radius:20px;padding:0 7px}
+.side .foot{margin-top:auto;padding:10px;color:var(--dim);font-size:12px}
+.side .foot .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;background:var(--dim)}
+/* main */
+main{padding:26px 30px 90px;max-width:1180px;width:100%}
+h1{font-size:22px;margin:0 0 4px;font-weight:650;letter-spacing:.2px}
+.sub{color:var(--muted);margin:0 0 22px}
+.page{display:none}.page.on{display:block}
+.grid{display:grid;gap:14px}
+.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g2{grid-template-columns:1fr 1fr}
+@media (max-width:1050px){.g3,.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+@media (max-width:760px){.app{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap}.brand{display:none}.side .foot{display:none}main{padding:18px 16px 90px}.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.card h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px}
+.card h3 .r{margin-left:auto;text-transform:none;letter-spacing:0}
+/* hero */
+.hero{display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:radial-gradient(circle 250px at 8% 0%,rgba(232,184,74,.10),transparent),linear-gradient(135deg,#1a1f2b,#141821);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:14px;position:relative;z-index:5}
+.orb{width:54px;height:54px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--panel2);border:1px solid var(--line2)}
+.orb i{width:16px;height:16px;border-radius:50%;background:var(--dim)}
+.orb.ok i{background:var(--green);box-shadow:0 0 0 6px var(--greenbg),0 0 24px var(--green)}
+.orb.busy i{background:var(--amber);box-shadow:0 0 0 6px var(--amberbg);animation:pulse 1.2s infinite}
+.orb.bad i{background:var(--red);box-shadow:0 0 0 6px var(--redbg)}
+@keyframes pulse{50%{opacity:.35}}
+.hero .t{flex:1;min-width:220px}
+.hero .t b{font-size:20px;display:block}
+.hero .t span{color:var(--muted)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{cursor:pointer;border:1px solid var(--line2);background:var(--panel2);color:var(--text);padding:8px 14px;border-radius:9px;display:inline-flex;align-items:center;gap:7px;font-weight:550;transition:.15s}
+.btn:hover{border-color:#47506a;background:#232a3a}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:16px;height:16px}
+.btn.gold{background:linear-gradient(180deg,#f1c766,#d39a2c);color:#1b1407;border-color:#e6b14a}
+.btn.gold:hover{filter:brightness(1.07)}
+.btn.red{color:var(--red);border-color:rgba(239,91,91,.35);background:var(--redbg)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:5px 10px;font-size:13px}
+select.in,input.in,textarea.in{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:7px 10px;outline:none}
+select.in:focus,input.in:focus,textarea.in:focus{border-color:var(--gold)}
+.menu{position:relative}
+.menu .pop{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:6px;min-width:280px;z-index:20;display:none;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.menu.open .pop{display:block}
+.menu .pop button{all:unset;display:block;cursor:pointer;padding:8px 10px;border-radius:7px;width:100%;box-sizing:border-box}
+.menu .pop button:hover{background:#2a3142}
+.menu .pop small{display:block;color:var(--muted);font-size:12px}
+/* service cards */
+.svc{display:flex;flex-direction:column;gap:10px}
+.svc .top{display:flex;align-items:center;gap:10px}
+.lamp{width:10px;height:10px;border-radius:50%;background:var(--dim)}
+.lamp.ok{background:var(--green);box-shadow:0 0 10px var(--green)}
+.lamp.busy{background:var(--amber);animation:pulse 1.2s infinite}
+.svc .name{font-weight:600}
+.svc .state{margin-left:auto;font-size:12px;color:var(--muted)}
+.meters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.meter{background:var(--bg2);border-radius:8px;padding:8px 10px}
+.meter small{display:block;color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+.meter b{font-size:15px;font-variant-numeric:tabular-nums}
+.bar{height:4px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--gold);border-radius:3px;transition:width .4s}
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat .big{font-size:30px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat small{color:var(--muted)}
+/* toggle */
+.tg{position:relative;display:inline-block;vertical-align:middle;width:42px;height:24px;flex:none;cursor:pointer}
+.tg input{opacity:0;width:0;height:0}
+.tg span{position:absolute;inset:0;background:#2b3243;border-radius:20px;transition:.2s}
+.tg span:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#cfd4df;border-radius:50%;transition:.2s}
+.tg input:checked+span{background:var(--gold)}
+.tg input:checked+span:before{transform:translateX(18px);background:#1b1407}
+.banner{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:10px;margin-bottom:14px;border:1px solid}
+.banner.info{background:var(--bluebg);border-color:rgba(90,169,255,.3)}
+.banner.warn{background:var(--amberbg);border-color:rgba(240,164,67,.35)}
+.banner.err{background:var(--redbg);border-color:rgba(239,91,91,.35)}
+.banner .grow{flex:1}
+.hidden{display:none!important}
+/* settings */
+.set-group{margin-bottom:14px}
+.row{display:grid;grid-template-columns:minmax(200px,1.1fr) 1.4fr;gap:16px;align-items:center;padding:12px 4px;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.row .lab b{font-weight:550}
+.row .lab small{display:block;color:var(--muted);font-size:12.5px}
+.row .lab code{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.row.changed .lab b{color:var(--gold2)}
+.row.changed .lab b:after{content:" •";color:var(--gold)}
+.ctl{display:flex;align-items:center;gap:12px;justify-content:flex-end}
+input[type=range]{flex:1;accent-color:var(--gold);max-width:320px}
+.num{width:84px;text-align:right}
+.unit{color:var(--muted);font-size:12px;min-width:26px}
+@media (max-width:760px){.row{grid-template-columns:1fr}.ctl{justify-content:flex-start}}
+.savebar{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--panel2);border:1px solid var(--gold);border-radius:12px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 14px 40px rgba(0,0,0,.55);z-index:30}
+/* console / logs */
+.term{background:#090b0f;border:1px solid var(--line);border-radius:10px;font:12.5px/1.5 var(--mono);padding:12px 14px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.term .e{color:#ff8a8a}.term .ts{color:var(--dim)}.term .cmd{color:var(--gold2)}.term .ok{color:#8fe3b8}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.toolbar label{display:flex;gap:8px;align-items:center;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{cursor:pointer;border:1px solid var(--line2);background:var(--bg2);padding:4px 10px;border-radius:20px;font-size:12.5px;color:var(--muted)}
+.chip:hover{color:var(--text);border-color:var(--gold)}
+/* tables */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:var(--muted);font-weight:550;font-size:12px;text-transform:uppercase;letter-spacing:.6px;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--panel2)}
+tr.sel td{background:var(--goldbg)}
+.pill{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:20px;background:var(--panel2);color:var(--muted);border:1px solid var(--line2)}
+.pill.bot{color:#c7a6ff;border-color:rgba(199,166,255,.35);background:rgba(199,166,255,.08)}
+.pill.on{color:var(--green);border-color:rgba(76,195,138,.4);background:var(--greenbg)}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}
+.hbar{display:grid;grid-template-columns:64px 1fr 90px;gap:10px;align-items:center;margin:7px 0}
+.hbar .track{height:14px;background:var(--bg2);border-radius:5px;overflow:hidden;position:relative}
+.hbar .track i{position:absolute;inset:0 auto 0 0;background:#3a3253;border-radius:5px}
+.hbar .track b{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#8d6bff,#c7a6ff);border-radius:5px}
+.hbar span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tweak{display:flex;flex-direction:column;gap:10px}
+.tweak .h{display:flex;gap:10px;align-items:flex-start}
+.tweak .h b{font-family:var(--mono);font-size:13px;word-break:break-all}
+.tweak p{margin:0;color:var(--muted);font-size:13px}
+.toast{position:fixed;right:20px;top:20px;display:flex;flex-direction:column;gap:8px;z-index:50}
+.toast div{background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--gold);padding:10px 14px;border-radius:9px;max-width:380px;box-shadow:0 10px 30px rgba(0,0,0,.5);animation:in .2s}
+.toast div.err{border-left-color:var(--red)}.toast div.ok{border-left-color:var(--green)}
+@keyframes in{from{transform:translateY(-6px);opacity:0}}
+.empty{color:var(--muted);text-align:center;padding:28px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px}
+.kv span{color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(5,6,10,.65);display:grid;place-items:center;z-index:60}
+.modal .box{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:20px;width:min(460px,92vw)}
+.modal .box h4{margin:0 0 8px;font-size:16px}
+.modal .box p{color:var(--muted);margin:0 0 16px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1407" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 1-4.5 4.5L18 20l-6-3-6 3 1.5-6.5L3 9l6-1z"/></svg></div>
+      <div><b>SPP Control</b><small>Wrath of the Lich King</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-p="overview" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</button>
+      <button data-p="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Settings</button>
+      <button data-p="console"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-5-6-5M12 19h8"/></svg>Console</button>
+      <button data-p="logs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Logs</button>
+      <button data-p="crashes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>Crashes<span class="badge hidden" id="crashBadge"></span></button>
+      <button data-p="characters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-7 7-7s7 3 7 7M17 4a4 4 0 010 8M22 21c0-3-2-5.5-4.5-6.5"/></svg>Characters</button>
+      <button data-p="tweaks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>Tweaks</button>
+    </nav>
+    <div class="foot"><span class="dot" id="connDot"></span><span id="connTxt">Connecting…</span></div>
+  </aside>
+
+  <main>
+    <!-- OVERVIEW -->
+    <section class="page on" id="p-overview">
+      <h1>Overview</h1><p class="sub">Your single-player realm at a glance.</p>
+      <div class="banner warn hidden" id="restartBanner"><div class="grow"><b>Settings changed.</b> Restart the server to apply them.</div><button class="btn sm gold" onclick="serverAction('restart')">Restart now</button></div>
+      <div class="banner info hidden" id="msgBanner"><div class="grow" id="msgText"></div></div>
+      <div class="hero">
+        <div class="orb" id="orb"><i></i></div>
+        <div class="t"><b id="heroTitle">…</b><span id="heroSub"></span></div>
+        <div class="btns">
+          <button class="btn gold" id="bStart" onclick="serverAction('start')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>Start</button>
+          <button class="btn" id="bRestart" onclick="serverAction('restart')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/></svg>Restart</button>
+          <button class="btn" id="bStop" onclick="serverAction('stop')"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Stop</button>
+          <select class="in" id="delay" title="Countdown before stop/restart"><option value="0">now</option><option value="10" selected>in 10 s</option><option value="60">in 1 min</option><option value="300">in 5 min</option></select>
+          <div class="menu" id="moreMenu"><button class="btn ghost" onclick="toggleMenu(event)">More ▾</button>
+            <div class="pop">
+              <button onclick="confirmAct('kill')"><b>Force stop world server</b><small>Kills the process. Unsaved progress is lost.</small></button>
+              <button onclick="confirmAct('stopall')"><b>Stop login server &amp; database</b><small>After the world server is stopped.</small></button>
+              <button onclick="openFolder('settings')"><b>Open settings folder</b><small>mangosd.conf, aiplayerbot.conf, backups</small></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid g3" id="svcGrid"></div>
+      <div class="grid g4" style="margin-top:14px">
+        <div class="card stat"><h3>Players online</h3><div class="big" id="sPlayers">–</div><small>real accounts</small></div>
+        <div class="card stat"><h3>Bots online</h3><div class="big" id="sBots">–</div><small id="sBotsSub">random bots in the world</small></div>
+        <div class="card stat"><h3>Auto-restart <span class="r"><label class="tg"><input type="checkbox" id="watchdog" onchange="setWatchdog(this.checked)"><span></span></label></span></h3><div class="big" id="sWd">Off</div><small id="sWdSub">restarts the server if it crashes</small></div>
+        <div class="card stat" style="cursor:pointer" onclick="go('crashes')"><h3>Last crash</h3><div class="big" style="font-size:18px;padding-top:8px" id="sCrash">–</div><small id="sCrashSub">click for details</small></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h3>Quick commands <span class="r muted" style="font-size:12px" id="raHint"></span></h3>
+        <div class="chips">
+          <span class="chip" onclick="quick('.server info')">Server info</span>
+          <span class="chip" onclick="quick('.account onlinelist')">Who's online</span>
+          <span class="chip" onclick="prefill('.announce ')">Announce…</span>
+          <span class="chip" onclick="prefill('.revive ')">Revive player…</span>
+          <span class="chip" onclick="prefill('.tele name  stormwind')">Teleport player…</span>
+          <span class="chip" onclick="prefill('.lookup item ')">Look up item…</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="p-settings">
+      <h1>Settings</h1><p class="sub">Changes are written to the config files with an automatic backup. They apply after a server restart.</p>
+      <div id="setGroups"></div>
+      <div class="card set-group">
+        <h3>All settings (advanced)</h3>
+        <div class="toolbar"><input class="in" id="confQ" placeholder="Search any setting, e.g. Rate.XP or Bot" style="flex:1;min-width:220px" oninput="confSearch()"></div>
+        <div id="confRes" class="muted">Type at least 2 characters.</div>
+      </div>
+      <div class="card set-group">
+        <h3>Dashboard</h3>
+        <div class="row"><div class="lab"><b>GM account for the remote console</b><small>Used to stop the server cleanly and run commands. Needs GM level 3. Stored only on this PC, in Dashboard\dashboard.json.</small></div>
+          <div class="ctl"><input class="in" id="raUser" placeholder="account name" style="width:150px"><input class="in" id="raPass" type="password" placeholder="password" style="width:150px"><button class="btn sm" onclick="saveDash()">Save</button></div></div>
+        <div class="row"><div class="lab"><b>Start SPP database autosave with the server</b><small>The SPP backup daemon that zips your database every 15 minutes.</small></div>
+          <div class="ctl"><label class="tg"><input type="checkbox" id="autosaveTg" onchange="saveDash()"><span></span></label></div></div>
+        <div class="row"><div class="lab"><b>Run server windows hidden</b><small>Database, login, world and autosave start with no windows. Use the Console tab for commands. Applies to the next start.</small></div>
+          <div class="ctl"><label class="tg"><input type="checkbox" id="hideTg" onchange="saveDash()"><span></span></label></div></div>
+        <div class="row"><div class="lab"><b>Keep bots near my level</b><small>On every server start, random bots outside &plusmn;N levels of your last played character re-roll into that range (new level, gear and spells) as they log in. Death knights stay 55+.<span id="botSyncInfo"></span></small></div>
+          <div class="ctl"><input class="in" id="botRange" type="number" min="1" max="20" style="width:64px" onchange="saveDash()" title="levels above and below"><label class="tg"><input type="checkbox" id="botSyncTg" onchange="saveDash()"><span></span></label></div></div>
+        <div class="row"><div class="lab"><b>Daily restart</b><small>Restarts the server once a day so bots re-sync to your level. The dashboard must be running and the PC awake at that time; a missed time is skipped, not run later.<span id="restartInfo"></span></small></div>
+          <div class="ctl"><input class="in" id="restartTime" type="time" style="width:110px" onchange="saveDash()"><label class="tg"><input type="checkbox" id="restartTg" onchange="saveDash()"><span></span></label></div></div>
+        <div class="row"><div class="lab"><b>Skip the daily restart if someone is logged in</b><small>Off: players get a 10-minute in-game countdown, then the restart. Characters are saved first either way.</small></div>
+          <div class="ctl"><label class="tg"><input type="checkbox" id="restartSkipTg" onchange="saveDash()"><span></span></label></div></div>
+        <div class="row"><div class="lab"><b>Clear stuck sessions when the game closes</b><small>If the game client crashes or is closed from in the world, the server keeps your character's session, and the next login then crashes the client on the first chat line. When Wow.exe closes, the dashboard kicks any real character still online so you log in clean. Needs the GM account above.</small></div>
+          <div class="ctl"><label class="tg"><input type="checkbox" id="kickStuckTg" onchange="saveDash()"><span></span></label></div></div>
+        <div class="row"><div class="lab"><b>Hidden log spam</b><small>Log lines containing any of these are hidden in the Logs tab (one per line).</small></div>
+          <div class="ctl" style="flex-direction:column;align-items:stretch"><textarea class="in mono" id="logFilters" rows="5"></textarea><button class="btn sm" style="align-self:flex-end" onclick="saveDash()">Save filters</button></div></div>
+      </div>
+      <div class="savebar hidden" id="saveBar"><span id="saveCount"></span><button class="btn sm ghost" onclick="discard()">Discard</button><button class="btn sm gold" onclick="saveSettings()">Save changes</button></div>
+    </section>
+
+    <!-- CONSOLE -->
+    <section class="page" id="p-console">
+      <h1>Console</h1><p class="sub">Run server (GM) commands without a game window. Commands that need a selected target in-game won't work here; use ones that take a player name.</p>
+      <div class="term" id="term" style="height:52vh"></div>
+      <div class="toolbar" style="margin-top:10px">
+        <input class="in mono" id="cmd" placeholder=".server info" style="flex:1" autocomplete="off">
+        <button class="btn gold" onclick="runCmd()">Run</button>
+      </div>
+      <div class="chips">
+        <span class="chip" onclick="quick('.server info')">.server info</span>
+        <span class="chip" onclick="quick('.account onlinelist')">.account onlinelist</span>
+        <span class="chip" onclick="prefill('.announce ')">.announce</span>
+        <span class="chip" onclick="prefill('.notify ')">.notify</span>
+        <span class="chip" onclick="prefill('.kick ')">.kick</span>
+        <span class="chip" onclick="prefill('.revive ')">.revive</span>
+        <span class="chip" onclick="prefill('.tele name ')">.tele name</span>
+        <span class="chip" onclick="prefill('.lookup item ')">.lookup item</span>
+        <span class="chip" onclick="prefill('.lookup quest ')">.lookup quest</span>
+        <span class="chip" onclick="prefill('.account set gmlevel ')">.account set gmlevel</span>
+      </div>
+    </section>
+
+    <!-- LOGS -->
+    <section class="page" id="p-logs">
+      <h1>Server log</h1><p class="sub">Live tail of Server.log.</p>
+      <div class="toolbar">
+        <label><span class="tg"><input type="checkbox" id="logFilter" checked onchange="loadLog()"><span></span></span>Hide spam</label>
+        <label><span class="tg"><input type="checkbox" id="logErr" onchange="loadLog()"><span></span></span>Errors only</label>
+        <label><span class="tg"><input type="checkbox" id="logAuto" checked><span></span></span>Live</label>
+        <input class="in" id="logSearch" placeholder="Search…" oninput="debLog()" style="flex:1;min-width:160px">
+        <select class="in" id="logLines" onchange="loadLog()"><option>200</option><option selected>400</option><option>1000</option></select>
+        <button class="btn sm" onclick="openFolder('logs')">Open folder</button>
+      </div>
+      <div class="term" id="logBox" style="height:66vh"></div>
+    </section>
+
+    <!-- CRASHES -->
+    <section class="page" id="p-crashes">
+      <h1>Crashes</h1><p class="sub">Crash reports written by the world server, newest first.</p>
+      <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)">
+        <div class="card" style="padding:6px"><table><thead><tr><th>When</th><th>Where</th><th></th></tr></thead><tbody id="crashList"></tbody></table></div>
+        <div class="card" id="crashDetail"><div class="empty">Select a crash to see details.</div></div>
+      </div>
+    </section>
+
+    <!-- CHARACTERS -->
+    <section class="page" id="p-characters">
+      <h1>Characters</h1><p class="sub">Your characters and the bot population.</p>
+      <div class="card" style="padding:6px 6px 2px"><table><thead><tr><th>Name</th><th>Level</th><th>Class</th><th>Location</th><th>Played</th><th></th></tr></thead><tbody id="charList"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div>
+      <div class="card" style="margin-top:14px"><h3>Bots by level <span class="r muted" style="font-size:12px"><b style="color:#c7a6ff">■</b> online &nbsp; <b style="color:#3a3253">■</b> offline</span></h3><div id="botBars"></div></div>
+    </section>
+
+    <!-- TWEAKS -->
+    <section class="page" id="p-tweaks">
+      <h1>Tweaks</h1><p class="sub">SQL fixes from the Tweaks folder (shared) and your MyTweaks folder (personal). Most should be applied with the world server stopped.</p>
+      <div class="toolbar"><button class="btn sm" onclick="openFolder('tweaks')">Open Tweaks folder</button><button class="btn sm" onclick="openFolder('mytweaks')">Open MyTweaks folder</button><button class="btn sm ghost" onclick="loadTweaks()">Refresh</button></div>
+      <div class="grid g2" id="tweakList"></div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toasts"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(path, body){
+  const opt = body === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json','X-SPP':'1'}, body:JSON.stringify(body)};
+  const r = await fetch(path, opt);
+  let j = {}; try { j = await r.json(); } catch(e) {}
+  if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+function toast(msg, kind=''){ const d=document.createElement('div'); d.className=kind; d.textContent=msg; $('#toasts').appendChild(d); setTimeout(()=>d.remove(), kind==='err'?7000:4000); }
+function fmtUp(s){ if(!s) return '–'; const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60); return d?`${d}d ${h}h`:h?`${h}h ${m}m`:`${m}m ${s%60}s`; }
+function fmtPlayed(s){ const h=Math.floor(s/3600); return h>=24?`${Math.floor(h/24)}d ${h%24}h`:`${h}h ${Math.floor(s%3600/60)}m`; }
+function confirmBox(title, text, okText='Confirm'){ return new Promise(res=>{ const m=document.createElement('div'); m.className='modal'; m.innerHTML=`<div class="box"><h4>${esc(title)}</h4><p>${esc(text)}</p><div class="btns" style="justify-content:flex-end"><button class="btn ghost">Cancel</button><button class="btn gold">${esc(okText)}</button></div></div>`; document.body.appendChild(m); const [c,o]=m.querySelectorAll('button'); c.onclick=()=>{m.remove();res(false)}; o.onclick=()=>{m.remove();res(true)}; m.onclick=e=>{if(e.target===m){m.remove();res(false)}}; }); }
+
+/* navigation */
+let page='overview';
+function go(p){ page=p; document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p)); document.querySelectorAll('.page').forEach(s=>s.classList.toggle('on',s.id==='p-'+p));
+  if(p==='settings') loadSettings(); if(p==='logs') loadLog(); if(p==='crashes') loadCrashes(); if(p==='characters') loadChars(); if(p==='tweaks') loadTweaks(); if(p==='console') $('#cmd').focus();
+  try{ localStorage.setItem('spp.page',p) }catch(e){} }
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.p));
+function toggleMenu(e){ e.stopPropagation(); $('#moreMenu').classList.toggle('open'); }
+document.addEventListener('click',()=>$('#moreMenu').classList.remove('open'));
+
+/* status */
+let st=null, lastSaveAt=0, seenCrash=null, wdHold=0;
+try{ lastSaveAt=+localStorage.getItem('spp.savedAt')||0; seenCrash=localStorage.getItem('spp.seenCrash'); }catch(e){}
+async function poll(){
+  try{ st = await api('/api/status'); $('#connDot').style.background='var(--green)'; $('#connTxt').textContent='Dashboard connected'; renderStatus(); }
+  catch(e){ $('#connDot').style.background='var(--red)'; $('#connTxt').textContent='Dashboard offline – is its window open?'; }
+}
+function svcCard(title, sub, info, busy){
+  const on = info && info.running; const cls = busy ? 'busy' : on ? 'ok' : '';
+  const cpu = on ? info.cpu : 0, mem = on ? info.memMB : 0;
+  return `<div class="card svc"><div class="top"><span class="lamp ${cls}"></span><span class="name">${title}</span><span class="state">${busy?'starting…':on?'running':'stopped'}</span></div>
+  <div class="muted" style="font-size:12.5px;margin-top:-6px">${sub}</div>
+  <div class="meters"><div class="meter"><small>CPU</small><b>${on&&cpu!=null?cpu+'%':'–'}</b><div class="bar"><i style="width:${Math.min(100,cpu||0)}%"></i></div></div>
+  <div class="meter"><small>Memory</small><b>${on&&mem?(mem>=1024?(mem/1024).toFixed(1)+' GB':mem+' MB'):'–'}</b><div class="bar"><i style="width:${Math.min(100,(mem||0)/80)}%"></i></div></div>
+  <div class="meter"><small>Uptime</small><b>${on?fmtUp(info.uptime):'–'}</b></div></div></div>`;
+}
+function renderStatus(){
+  const s=st, w=s.world||{}, act=s.action;
+  const busy = act!=='idle';
+  let title, sub, orb;
+  if (act==='starting'){ title='Starting'; sub=s.message; orb='busy'; }
+  else if (act==='stopping'||act==='restarting'){ title=act==='stopping'?'Stopping':'Restarting'; sub=s.message; orb='busy'; }
+  else if (w.running && w.ready){ title='Online'; sub='Ready – log in with your WoW client.'; orb='ok'; }
+  else if (w.running){ title='Loading world'; sub='The world server is starting up…'; orb='busy'; }
+  else { title='Offline'; sub= s.message && /unexpected|crash/i.test(s.message) ? s.message : 'The world server is not running.'; orb= /unexpected|crash/i.test(s.message||'')?'bad':''; }
+  $('#heroTitle').textContent=title; $('#heroSub').textContent=sub; $('#orb').className='orb '+orb;
+  $('#bStart').disabled = w.running || busy;
+  $('#bStop').disabled = !w.running || busy || !s.raConfigured;
+  $('#bRestart').disabled = !w.running || busy || !s.raConfigured;
+  $('#bStop').title = $('#bRestart').title = s.raConfigured ? '' : 'Set your GM account in Settings > Dashboard first';
+  $('#svcGrid').innerHTML = svcCard('Database','MySQL – stores everything',s.db, act==='starting'&&s.step==='db') + svcCard('Login server','realmd – lets the client log in',s.realm, act==='starting'&&s.step==='realm') + svcCard('World server','mangosd – the game world and bots',w, (act==='starting'&&s.step==='world')||(w.running&&!w.ready));
+  $('#sPlayers').textContent = s.online ? s.online.players : '–';
+  $('#sBots').textContent = s.online ? s.online.bots.toLocaleString() : '–';
+  if (Date.now() > wdHold) $('#watchdog').checked = s.watchdog;
+  $('#sWd').textContent = $('#watchdog').checked?'On':'Off';
+  $('#sWdSub').textContent = s.watchdog ? (s.watchdogRestarts? `restarted ${s.watchdogRestarts}× this session`:'watching for crashes') : 'restarts the server if it crashes';
+  if (s.lastCrash){ $('#sCrash').textContent = s.lastCrash.time.slice(5); const isNew = seenCrash !== s.lastCrash.name; $('#crashBadge').classList.toggle('hidden', !isNew); $('#crashBadge').textContent='new'; $('#sCrashSub').textContent= (isNew?'NEW · ':'') + (s.lastCrash.where||'click for details').replace(/^[A-Za-z]+::/,''); }
+  else { $('#sCrash').textContent='None'; $('#sCrashSub').textContent='no crash reports'; }
+  $('#raHint').textContent = s.raConfigured ? '' : 'Set your GM account in Settings › Dashboard to enable commands';
+  const worldStart = w.running ? Date.now() - w.uptime*1000 : 0;
+  $('#restartBanner').classList.toggle('hidden', !(w.running && lastSaveAt > worldStart && !busy));
+  const showMsg = s.message && !/^Server is up\.$/.test(s.message) && (busy || /unexpected|did not|exited|taking long|force|stopped\./i.test(s.message));
+  $('#msgBanner').classList.toggle('hidden', !showMsg || orb==='bad'); $('#msgText').textContent = s.message||'';
+}
+async function serverAction(a){
+  const delay = +$('#delay').value;
+  try{
+    if (a==='start'){ await api('/api/server/start',{}); toast('Starting the server…'); }
+    else { const r = await api('/api/server/'+a,{delay}); toast(a==='stop'?'Shutdown scheduled.':'Restart scheduled.','ok'); }
+    poll();
+  }catch(e){ toast(e.message,'err'); }
+}
+async function confirmAct(a){
+  $('#moreMenu').classList.remove('open');
+  const t = a==='kill' ? ['Force stop the world server?','The process is killed immediately. Anything since the last autosave (max ~2 minutes) is lost.','Force stop'] : ['Stop login server and database?','Do this after the world server has stopped, e.g. before closing everything down.','Stop them'];
+  if (!await confirmBox(...t)) return;
+  try{ await api('/api/server/'+a,{}); toast('Done.','ok'); poll(); }catch(e){ toast(e.message,'err'); }
+}
+// a status poll already in flight still has the old value - don't let it flip the switch back
+async function setWatchdog(on){
+  wdHold = Date.now() + 5000; $('#sWd').textContent = on?'On':'Off';
+  try{ await api('/api/watchdog',{enabled:on}); toast(on?'Auto-restart on crash enabled.':'Auto-restart disabled.'); }
+  catch(e){ wdHold = 0; $('#watchdog').checked = !on; toast(e.message,'err'); }
+}
+async function openFolder(w){ try{ await api('/api/open',{what:w}); }catch(e){ toast(e.message,'err'); } }
+
+/* console */
+const hist=[]; let hi=0;
+function termAdd(html){ const t=$('#term'); t.insertAdjacentHTML('beforeend', html); t.scrollTop=t.scrollHeight; }
+async function runCmd(c){
+  c = (c ?? $('#cmd').value).trim(); if(!c) return;
+  if(!c.startsWith('.')) c='.'+c;
+  hist.push(c); hi=hist.length; $('#cmd').value='';
+  termAdd(`<div class="cmd">› ${esc(c)}</div>`);
+  try{ const r = await api('/api/command',{command:c}); termAdd(`<div class="ok">${esc(r.output||'(no output)')}</div>`); }
+  catch(e){ termAdd(`<div class="e">${esc(e.message)}</div>`); }
+}
+function quick(c){ go('console'); runCmd(c); }
+function prefill(c){ go('console'); $('#cmd').value=c; $('#cmd').focus(); }
+$('#cmd').addEventListener('keydown',e=>{ if(e.key==='Enter') runCmd(); else if(e.key==='ArrowUp'&&hi>0){ $('#cmd').value=hist[--hi]; e.preventDefault(); } else if(e.key==='ArrowDown'){ hi=Math.min(hist.length,hi+1); $('#cmd').value=hist[hi]||''; } });
+
+/* logs */
+let logT=null;
+function debLog(){ clearTimeout(logT); logT=setTimeout(loadLog,300); }
+async function loadLog(){
+  try{
+    const r = await api(`/api/log?lines=${$('#logLines').value}&filter=${$('#logFilter').checked?1:0}&search=${encodeURIComponent($('#logSearch').value)}`);
+    const box=$('#logBox'); const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+    let lines = r.lines||[]; if ($('#logErr').checked) lines = lines.filter(l=>/ERROR/.test(l));
+    box.innerHTML = lines.length ? lines.map(l=>{ const m=l.match(/^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)\s(.*)$/); const body=m?m[2]:l; return `<div${/ERROR/.test(body)?' class="e"':''}>${m?`<span class="ts">${m[1].slice(11)}</span> `:''}${esc(body)}</div>`; }).join('') : '<div class="muted">No lines.</div>';
+    if (atBottom) box.scrollTop = box.scrollHeight;
+  }catch(e){ $('#logBox').innerHTML=`<div class="e">${esc(e.message)}</div>`; }
+}
+
+/* crashes */
+async function loadCrashes(){
+  try{
+    const r = await api('/api/crashes'); const list=r.crashes||[];
+    if (list[0]){ seenCrash=list[0].name; try{localStorage.setItem('spp.seenCrash',seenCrash)}catch(e){} $('#crashBadge').classList.add('hidden'); }
+    $('#crashList').innerHTML = list.length ? list.map((c,i)=>`<tr class="click" data-n="${esc(c.name)}"><td class="mono" style="white-space:nowrap">${esc(c.time.slice(5,16))}</td><td><div style="font-weight:550">${esc((c.signature.split('  <  ')[0]||'?'))}</div><div class="muted" style="font-size:12px">${esc(c.hint.slice(0,90))}${c.hint.length>90?'…':''}</div></td><td>${c.bot?'<span class="pill bot">bot</span>':''}</td></tr>`).join('') : '<tr><td colspan="3" class="empty">No crash reports. 🎉</td></tr>';
+    document.querySelectorAll('#crashList tr.click').forEach(tr=>tr.onclick=()=>showCrash(tr.dataset.n, tr));
+    const first=document.querySelector('#crashList tr.click'); if(first) showCrash(first.dataset.n, first);
+  }catch(e){ toast(e.message,'err'); }
+}
+async function showCrash(n, tr){
+  document.querySelectorAll('#crashList tr').forEach(x=>x.classList.toggle('sel',x===tr));
+  try{
+    const c = await api('/api/crash?name='+encodeURIComponent(n));
+    const summary = `Crash ${c.time}\n${c.exception}\n` + (c.frames||[]).slice(0,10).map(f=>`  ${f.fn}${f.file?'  ('+f.file+':'+f.line+')':''}`).join('\n');
+    $('#crashDetail').innerHTML = `<h3>${esc(c.time)} <span class="r">${c.bot?'<span class="pill bot">triggered by a bot</span>':''}</span></h3>
+      <div class="banner ${/Unknown|Not a known/.test(c.hint)?'warn':'info'}" style="margin-bottom:12px"><div class="grow">${esc(c.hint)}</div></div>
+      <div class="kv" style="margin-bottom:12px"><span>Error</span><b class="mono">${esc(c.exception)}</b><span>File</span><span class="mono" style="color:var(--text)">${esc(c.name)}</span></div>
+      <table><thead><tr><th>Call stack (crashing thread)</th><th>Source</th></tr></thead><tbody>${(c.frames||[]).slice(0,14).map((f,i)=>`<tr><td class="mono" style="${i===0?'color:var(--red)':''}">${esc(f.fn.replace(/<lambda_[0-9a-f]+>/,'lambda'))}</td><td class="mono muted">${esc(f.file)}${f.line?':'+f.line:''}</td></tr>`).join('')}</tbody></table>
+      <details style="margin-top:12px"><summary class="muted" style="cursor:pointer">Local variables</summary><div class="term" style="max-height:260px;margin-top:8px">${esc(c.locals||'')}</div></details>
+      <div class="btns" style="margin-top:14px"><button class="btn sm" id="copyCrash">Copy summary for Claude</button><button class="btn sm ghost" onclick="openFolder('crashes')">Open folder</button></div>`;
+    $('#copyCrash').onclick=()=>{ navigator.clipboard.writeText(summary).then(()=>toast('Copied – paste it into the chat.','ok')); };
+  }catch(e){ $('#crashDetail').innerHTML=`<div class="e">${esc(e.message)}</div>`; }
+}
+
+/* characters */
+const classColor={Warrior:'#C79C6E',Paladin:'#F58CBA',Hunter:'#ABD473',Rogue:'#FFF569',Priest:'#FFFFFF','Death Knight':'#C41F3B',Shaman:'#0070DE',Mage:'#69CCF0',Warlock:'#9482C9',Druid:'#FF7D0A'};
+async function loadChars(){
+  try{
+    const r = await api('/api/characters');
+    const cs=r.chars||[];
+    $('#charList').innerHTML = cs.length ? cs.map(c=>`<tr><td><b style="color:${classColor[c.cls]||'#fff'}">${esc(c.name)}</b> ${c.online?'<span class="pill on">online</span>':''}<div class="muted" style="font-size:12px">${esc(c.account)}</div></td><td><b>${c.level}</b></td><td>${esc(c.race||'')} ${esc(c.cls||'')}</td><td>${esc(c.zone)}<div class="muted" style="font-size:12px">${esc(c.map)}</div></td><td class="muted">${fmtPlayed(c.played)}</td><td style="text-align:right"><button class="btn sm" onclick="unstuck(${c.guid},'${esc(c.name)}')" title="Move to Hearthstone location">Unstuck</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty">No characters yet.</td></tr>';
+    const bots=r.bots||[]; const max=Math.max(1,...bots.map(b=>b.total));
+    $('#botBars').innerHTML = bots.length ? bots.map(b=>`<div class="hbar"><span>Lvl ${b.label}</span><div class="track"><i style="width:${b.total/max*100}%"></i><b style="width:${b.online/max*100}%"></b></div><span>${b.online} / ${b.total}</span></div>`).join('') : '<div class="empty">No bots.</div>';
+  }catch(e){ $('#charList').innerHTML=`<tr><td colspan="6" class="empty">${esc(e.message)}<br><small>The database must be running.</small></td></tr>`; }
+}
+async function unstuck(g,n){
+  if(!await confirmBox(`Unstuck ${n}?`,'Moves the character to its Hearthstone location. The character must be logged out.','Move')) return;
+  try{ const r=await api('/api/characters/unstuck',{guid:g}); toast(r.message,'ok'); loadChars(); }catch(e){ toast(e.message,'err'); }
+}
+
+/* tweaks */
+async function loadTweaks(){
+  try{
+    const r=await api('/api/tweaks'); const ts=r.tweaks||[];
+    $('#tweakList').innerHTML = ts.length ? ts.map((t,i)=>`<div class="card tweak"><div class="h"><b>${esc(t.name)}</b>${t.folder==='MyTweaks'?'<span class="pill">mine</span>':''}${t.revert?'<span class="pill">undo</span>':''}<button class="btn sm ${t.revert?'':'gold'}" style="margin-left:auto" data-i="${i}">Apply</button></div><p>${esc(t.desc||'No description.')}</p><div class="term hidden" id="tw${i}" style="max-height:220px"></div></div>`).join('') : '<div class="empty">No .sql files in Tweaks or MyTweaks.</div>';
+    document.querySelectorAll('#tweakList button[data-i]').forEach(b=>b.onclick=()=>applyTweak(ts[+b.dataset.i], +b.dataset.i, b));
+  }catch(e){ toast(e.message,'err'); }
+}
+async function applyTweak(t,i,btn){
+  const running = st && st.world && st.world.running;
+  if(!await confirmBox(`Apply ${t.name}?`, running ? 'The world server is running. Most tweaks are safest with it stopped; world changes only take effect after a restart.' : 'This runs the SQL against your database.', 'Apply')) return;
+  btn.disabled=true; const out=$('#tw'+i); out.classList.remove('hidden'); out.textContent='Running…';
+  try{ const r=await api('/api/tweaks/apply',{name:t.name, folder:t.folder}); out.innerHTML = `<div class="${r.ok?'ok':'e'}">${esc(r.output||'(done, no output)')}</div>`; toast(r.ok?'Applied.':'Failed – see output.', r.ok?'ok':'err'); if(r.ok){ lastSaveAt=Date.now(); try{localStorage.setItem('spp.savedAt',lastSaveAt)}catch(e){} } }
+  catch(e){ out.innerHTML=`<div class="e">${esc(e.message)}</div>`; }
+  btn.disabled=false;
+}
+
+/* settings */
+let defs=[], changes={};
+function key(d){ return d.f+'|'+d.k; }
+function dispVal(d,v){ if(d.type==='num'){ const n=parseFloat(v); return isNaN(n)?0:(d.scale? n/d.scale : n); } return v; }
+function rawVal(d,v){ if(d.type==='num'){ const n=+v*(d.scale||1); return String(Math.round(n*1000)/1000); } return String(v); }
+function control(d){
+  const id='c_'+key(d).replace(/[^A-Za-z0-9]/g,'_');
+  if(d.type==='bool'||d.type==='strbool'){ const on = d.type==='bool' ? String(d.value).trim()==='1' : String(d.value).trim()===d.on; return `<label class="tg"><input type="checkbox" id="${id}" ${on?'checked':''}><span></span></label>`; }
+  if(d.type==='select') return `<select class="in" id="${id}">${d.options.map(o=>`<option value="${o.v}" ${String(d.value).trim()===o.v?'selected':''}>${esc(o.t)}</option>`).join('')}</select>`;
+  const v=dispVal(d,d.value);
+  return `<input type="range" id="${id}r" min="${d.min}" max="${d.max}" step="${d.step}" value="${v}"><input class="in num" id="${id}" type="number" step="${d.step}" value="${v}"><span class="unit">${esc(d.unit || (/^Rate\./.test(d.k) ? '×' : ''))}</span>`;
+}
+async function loadSettings(){
+  try{
+    const r=await api('/api/settings'); defs=r.settings; changes={};
+    const groups={}; defs.forEach(d=>(groups[d.g]=groups[d.g]||[]).push(d));
+    $('#setGroups').innerHTML = Object.entries(groups).map(([g,ds])=>`<div class="card set-group"><h3>${esc(g)}</h3>${ds.map(d=>`<div class="row" data-k="${esc(key(d))}"><div class="lab"><b>${esc(d.label)}</b>${d.help?`<small>${esc(d.help)}</small>`:''}<code>${esc(d.k)}</code></div><div class="ctl">${control(d)}</div></div>`).join('')}</div>`).join('');
+    defs.forEach(d=>{
+      const id='c_'+key(d).replace(/[^A-Za-z0-9]/g,'_'); const el=document.getElementById(id), rg=document.getElementById(id+'r');
+      const upd=()=>{ let v; if(d.type==='bool') v=el.checked?'1':'0'; else if(d.type==='strbool') v=el.checked?d.on:d.off; else if(d.type==='select') v=el.value; else v=rawVal(d,el.value);
+        const orig = d.type==='num' ? rawVal(d,dispVal(d,d.value)) : String(d.value).trim();
+        if(v!==orig) changes[key(d)]={f:d.f,k:d.k,v}; else delete changes[key(d)];
+        document.querySelector(`.row[data-k="${CSS.escape(key(d))}"]`).classList.toggle('changed', !!changes[key(d)]); renderSaveBar(); };
+      if(rg){ rg.oninput=()=>{ el.value=rg.value; upd(); }; el.oninput=()=>{ rg.value=el.value; upd(); }; } else el.onchange=upd;
+    });
+    const dc=r.dash; $('#raUser').value=dc.raUser||''; $('#raPass').placeholder=dc.raPassSet?'•••••• (saved)':'password'; $('#autosaveTg').checked=dc.startAutosave; $('#hideTg').checked=dc.hideWindows; $('#botSyncTg').checked=dc.botLevelSync; $('#restartTg').checked=dc.restartDaily; $('#restartTime').value=dc.restartTime||'04:00'; $('#restartSkipTg').checked=dc.restartSkipPlayers; $('#kickStuckTg').checked=dc.autoKickStuck; $('#restartInfo').textContent=dc.nextRestart?(' Next: '+dc.nextRestart):''; $('#botRange').value=dc.botLevelRange||5; $('#botSyncInfo').textContent=dc.botSync?(' Last start: '+dc.botSync):''; $('#logFilters').value=(dc.logFilters||[]).join('\n');
+    renderSaveBar();
+  }catch(e){ toast(e.message,'err'); }
+}
+function renderSaveBar(){ const n=Object.keys(changes).length; $('#saveBar').classList.toggle('hidden',!n); $('#saveCount').textContent=`${n} unsaved change${n>1?'s':''}`; }
+function discard(){ loadSettings(); }
+async function saveSettings(){
+  try{ const r=await api('/api/settings',{changes:Object.values(changes)}); toast(`Saved ${r.saved.length} setting(s). A backup was made. Restart the server to apply.`,'ok'); lastSaveAt=Date.now(); try{localStorage.setItem('spp.savedAt',lastSaveAt)}catch(e){} loadSettings(); poll(); }
+  catch(e){ toast(e.message,'err'); }
+}
+async function saveDash(){
+  const body={ raUser:$('#raUser').value.trim(), startAutosave:$('#autosaveTg').checked, hideWindows:$('#hideTg').checked, botLevelSync:$('#botSyncTg').checked, restartDaily:$('#restartTg').checked, restartTime:$('#restartTime').value, restartSkipPlayers:$('#restartSkipTg').checked, autoKickStuck:$('#kickStuckTg').checked, botLevelRange:+$('#botRange').value||5, logFilters:$('#logFilters').value.split('\n').map(s=>s.trim()).filter(Boolean) };
+  if($('#raPass').value) body.raPass=$('#raPass').value;
+  try{ await api('/api/dashcfg',body); $('#raPass').value=''; toast('Dashboard settings saved.','ok'); loadSettings(); poll(); }catch(e){ toast(e.message,'err'); }
+}
+let cq=null;
+function confSearch(){ clearTimeout(cq); cq=setTimeout(async()=>{
+  const q=$('#confQ').value.trim(); if(q.length<2){ $('#confRes').innerHTML='Type at least 2 characters.'; return; }
+  try{ const r=await api('/api/conf/search?q='+encodeURIComponent(q)); const rs=r.results||[];
+    $('#confRes').innerHTML = rs.length ? rs.map((x,i)=>`<div class="row"><div class="lab"><b class="mono" style="font-size:13px">${esc(x.k)}</b><small>${esc(x.f)}.conf</small></div><div class="ctl"><input class="in mono" style="flex:1;max-width:340px" id="raw${i}" value="${esc(x.v)}"><button class="btn sm" data-i="${i}">Save</button></div></div>`).join('') : 'No matching settings.';
+    document.querySelectorAll('#confRes button[data-i]').forEach(b=>b.onclick=async()=>{ const x=rs[+b.dataset.i]; const v=document.getElementById('raw'+b.dataset.i).value;
+      try{ const s=await api('/api/settings',{changes:[{f:x.f,k:x.k,v}]}); toast(s.saved.length?`${x.k} saved. Restart to apply.`:'Nothing saved.', s.saved.length?'ok':'err'); lastSaveAt=Date.now(); try{localStorage.setItem('spp.savedAt',lastSaveAt)}catch(e){} }catch(e){ toast(e.message,'err'); } });
+  }catch(e){ $('#confRes').textContent=e.message; } },250); }
+
+/* boot */
+poll(); setInterval(poll, 2000);
+setInterval(()=>{ if(page==='logs' && $('#logAuto').checked) loadLog(); }, 3000);
+setInterval(()=>{ if(page==='characters') loadChars(); }, 15000);
+try{ const p=localStorage.getItem('spp.page'); if(p && document.getElementById('p-'+p)) go(p); }catch(e){}
+</script>
+</body>
+</html>
