@@ -103,7 +103,6 @@ The `Tweaks\` folder has these SQL files. The first comment lines of each file a
 |---|---|
 | `fix_portal_teleports.sql` / `revert_portal_teleports.sql` | Fixes a world-server crash (`Spell::EffectTeleportUnits`) caused by portal objects whose teleport has no facing set |
 | `fix_surface_portal_crash.sql` / `revert_surface_portal.sql` | Older, narrower workaround for the same crash: it disables one portal. Superseded by the fix above |
-| `hearthstone_5min.sql` / `hearthstone_revert.sql` | Hearthstone cooldown of 5 minutes instead of 30 |
 
 You can apply them from the **Tweaks** tab. Or, from a command prompt:
 `Tweaks\apply_sql.bat <file.sql>` (drag-and-drop onto the .bat may close at once). Most of them take effect after the
