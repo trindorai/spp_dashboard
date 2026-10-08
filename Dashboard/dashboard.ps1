@@ -448,10 +448,10 @@ function Get-Status {
 }
 
 $CrashHints = @(
-  @{ p = 'EffectTeleportUnits'; t = 'A portal-type object cast a teleport with no facing set. fix_portal_teleports.sql in MyTweaks covers the known portals - if this happened after applying it, a portal not on that list triggered it.' },
+  @{ p = 'EffectTeleportUnits'; t = 'A portal-type object cast a teleport with no facing set. fix_portal_teleports.sql in Tweaks covers the known portals - if this happened after applying it, a portal not on that list triggered it.' },
   @{ p = 'BindToInstance'; t = 'A bot crashed while being saved to a dungeon instance lock (known bot bug, often right after a teleport into a dungeon).' },
   @{ p = 'ai::Engine::Reset'; t = 'A bot''s AI was reset during a random teleport (scheduled strategy change) and its action lists were already broken. Known playerbots instability, random - not caused by a setting. More likely right after a start while many bots re-roll their level.' },
-  @{ p = 'guardAI::JustDied'; t ='A town guard was killed by a damage-over-time effect whose caster had vanished (rare bot-related bug).' },
+  @{ p = 'guardAI::JustDied'; t = 'A town guard was killed by a damage-over-time effect whose caster had vanished (bot logged out, teleported or was re-rolled). Server bug in guard_ai.cpp; more likely right after a start that re-rolls many bots.' },
   @{ p = 'GetCharmerGuid'; t = 'A unit referenced a caster/owner that no longer exists (usually bot-related).' }
 )
 function Parse-Crash([System.IO.FileInfo]$f, [switch]$Full) {
@@ -474,7 +474,9 @@ function Parse-Crash([System.IO.FileInfo]$f, [switch]$Full) {
     $sig = (@($frames | Select-Object -First 3 | ForEach-Object { $_.fn })) -join '  <  '
     $bot = @($frames | Where-Object { $_.fn -match 'Playerbot|HandleBotPackets' }).Count -gt 0
     $hint = 'Not a known crash yet - ask Claude to look at it.'
-    foreach ($h in $CrashHints) { if ($sig.Contains($h.p)) { $hint = $h.t; break } }
+    # match against the first frames, not just the 3-frame signature (e.g. guardAI::JustDied sits 6 frames deep)
+    $stackText = (@($frames | Select-Object -First 12 | ForEach-Object { $_.fn })) -join ' '
+    foreach ($h in $CrashHints) { if ($stackText.Contains($h.p)) { $hint = $h.t; break } }
     $time = $f.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss')
     $hd = [regex]::Match(($lines | Select-Object -First 4) -join ' ', 'Crash date (\d+):(\d+):(\d{4})\. Time (\d+):(\d+)')
     if ($hd.Success) {
