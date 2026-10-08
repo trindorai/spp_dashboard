@@ -102,6 +102,7 @@ The `Tweaks\` folder has these SQL files. The first comment lines of each file a
 | File | What it does |
 |---|---|
 | `fix_portal_teleports.sql` / `revert_portal_teleports.sql` | Fixes a world-server crash (`Spell::EffectTeleportUnits`) caused by portal objects whose teleport has no facing set |
+| `fix_lfg_dungeon_entrances.sql` / `revert_lfg_dungeon_entrances.sql` | Dungeon Finder teleports to the **front** entrance of Gnomeregan, Uldaman and Lower Blackrock Spire. Without it, groups can land behind Gnomeregan's locked Workshop Door, next to Uldaman's last boss, or in Upper Blackrock Spire |
 | `fix_surface_portal_crash.sql` / `revert_surface_portal.sql` | Older, narrower workaround for the same crash: it disables one portal. Superseded by the fix above |
 
 You can apply them from the **Tweaks** tab. Or, from a command prompt:
