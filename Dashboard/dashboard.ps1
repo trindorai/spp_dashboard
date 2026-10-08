@@ -29,7 +29,7 @@ if ([System.IO.Path]::DirectorySeparatorChar -eq '/') {
 
 # ---------------------------------------------------------------- dashboard config
 function Load-Cfg {
-    $d = @{ port = 8099; raUser = ''; raPass = ''; watchdog = $false; startAutosave = $true; hideWindows = $true; botLevelSync = $false; botLevelRange = 5;
+    $d = @{ port = 8099; raUser = ''; raPass = ''; watchdog = $false; startAutosave = $true; hideWindows = $true; botLevelSync = $false; botLevelRange = 5; botLevelBelow = $null; botLevelAbove = $null;
             restartDaily = $false; restartTime = '04:00'; restartSkipPlayers = $true; restartWarn = 10; restartLast = '';
             autoKickStuck = $true;
             logFilters = @('spell #75460','Path empty','game_graveyard_zone','already existing cooldown','lost references','too far away from player','MoveSplineInitArgs') }
@@ -261,8 +261,11 @@ function Sync-BotLevels {
     $ci = (Get-DbInfo 'CharacterDatabaseInfo').db; $li = (Get-DbInfo 'LoginDatabaseInfo').db
     $r = Sql-Rows ("SELECT c.name, c.level FROM {0}.characters c JOIN {1}.account a ON a.id = c.account WHERE a.username NOT LIKE 'RNDBOT%' ORDER BY c.logout_time DESC LIMIT 1" -f $ci, $li)
     if ($r.Count -eq 0) { return $null }
-    $name = $r[0][0]; $lvl = To-Int $r[0][1]; $n = [Math]::Max(1, (To-Int $Cfg.botLevelRange))
-    $min = [Math]::Max(1, $lvl - $n); $max = [Math]::Min(80, $lvl + $n)
+    $name = $r[0][0]; $lvl = To-Int $r[0][1]
+    # levels below / above the player (botLevelRange is the older symmetric setting, used when these are not set)
+    $below = if ($Cfg.botLevelBelow -ne $null) { [Math]::Max(0, (To-Int $Cfg.botLevelBelow)) } else { [Math]::Max(1, (To-Int $Cfg.botLevelRange)) }
+    $above = if ($Cfg.botLevelAbove -ne $null) { [Math]::Max(0, (To-Int $Cfg.botLevelAbove)) } else { [Math]::Max(1, (To-Int $Cfg.botLevelRange)) }
+    $min = [Math]::Max(1, $lvl - $below); $max = [Math]::Min(80, [Math]::Max($min + 1, $lvl + $above))
     $noDk = $max -lt 55
 
     $orig = Get-BotOrig
@@ -643,7 +646,7 @@ function Handle($ctx) {
                 if ($m -eq 'GET') {
                     $out = New-Object System.Collections.ArrayList
                     foreach ($d in $SettingDefs) { $c = $d.Clone(); $c.value = Read-ConfValue $d.f $d.k; [void]$out.Add($c) }
-                    Send-Json $ctx @{ settings = $out; dash = @{ raUser = [string]$Cfg.raUser; raPassSet = [bool]$Cfg.raPass; port = $Cfg.port; startAutosave = [bool]$Cfg.startAutosave; hideWindows = [bool]$Cfg.hideWindows; botLevelSync = [bool]$Cfg.botLevelSync; botLevelRange = [int]$Cfg.botLevelRange; botSync = $State.botSync; restartDaily = [bool]$Cfg.restartDaily; restartTime = [string]$Cfg.restartTime; restartSkipPlayers = [bool]$Cfg.restartSkipPlayers; autoKickStuck = [bool]$Cfg.autoKickStuck; nextRestart = (Fmt-Next); logFilters = @($Cfg.logFilters) } }
+                    Send-Json $ctx @{ settings = $out; dash = @{ raUser = [string]$Cfg.raUser; raPassSet = [bool]$Cfg.raPass; port = $Cfg.port; startAutosave = [bool]$Cfg.startAutosave; hideWindows = [bool]$Cfg.hideWindows; botLevelSync = [bool]$Cfg.botLevelSync; botLevelRange = [int]$Cfg.botLevelRange; botLevelBelow = $(if ($Cfg.botLevelBelow -ne $null) { [int]$Cfg.botLevelBelow } else { [int]$Cfg.botLevelRange }); botLevelAbove = $(if ($Cfg.botLevelAbove -ne $null) { [int]$Cfg.botLevelAbove } else { [int]$Cfg.botLevelRange }); botSync = $State.botSync; restartDaily = [bool]$Cfg.restartDaily; restartTime = [string]$Cfg.restartTime; restartSkipPlayers = [bool]$Cfg.restartSkipPlayers; autoKickStuck = [bool]$Cfg.autoKickStuck; nextRestart = (Fmt-Next); logFilters = @($Cfg.logFilters) } }
                 } else {
                     $b = Read-Body $ctx; $byFile = @{}
                     foreach ($ch in @($b.changes)) {
@@ -672,6 +675,8 @@ function Handle($ctx) {
                 if ($b.restartSkipPlayers -ne $null) { $Cfg.restartSkipPlayers = [bool]$b.restartSkipPlayers }
                 if ($b.autoKickStuck -ne $null) { $Cfg.autoKickStuck = [bool]$b.autoKickStuck }
                 if ($b.botLevelRange -ne $null) { $Cfg.botLevelRange = [Math]::Min(20, [Math]::Max(1, [int]$b.botLevelRange)) }
+                if ($b.botLevelBelow -ne $null) { $Cfg.botLevelBelow = [Math]::Min(20, [Math]::Max(0, [int]$b.botLevelBelow)) }
+                if ($b.botLevelAbove -ne $null) { $Cfg.botLevelAbove = [Math]::Min(20, [Math]::Max(0, [int]$b.botLevelAbove)) }
                 if ($b.logFilters -ne $null) { $Cfg.logFilters = @($b.logFilters) }
                 Save-Cfg; Send-Json $ctx @{ ok = $true }; return }
             '^/api/conf/search$' { Send-Json $ctx @{ results = (Search-Conf ([string]$q['q'])) }; return }

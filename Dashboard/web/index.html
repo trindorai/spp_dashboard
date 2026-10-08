@@ -239,8 +239,8 @@ tr.sel td{background:var(--goldbg)}
           <div class="ctl"><label class="tg"><input type="checkbox" id="autosaveTg" onchange="saveDash()"><span></span></label></div></div>
         <div class="row"><div class="lab"><b>Run server windows hidden</b><small>Database, login, world and autosave start with no windows. Use the Console tab for commands. Applies to the next start.</small></div>
           <div class="ctl"><label class="tg"><input type="checkbox" id="hideTg" onchange="saveDash()"><span></span></label></div></div>
-        <div class="row"><div class="lab"><b>Keep bots near my level</b><small>On every server start, random bots outside &plusmn;N levels of your last played character re-roll into that range (new level, gear and spells) as they log in. Death knights stay 55+.<span id="botSyncInfo"></span></small></div>
-          <div class="ctl"><input class="in" id="botRange" type="number" min="1" max="20" style="width:64px" onchange="saveDash()" title="levels above and below"><label class="tg"><input type="checkbox" id="botSyncTg" onchange="saveDash()"><span></span></label></div></div>
+        <div class="row"><div class="lab"><b>Keep bots near my level</b><small>On every server start, random bots outside the range (levels below / above your last played character) re-roll into it (new level, gear and spells) as they log in. Death knights stay 55+.<span id="botSyncInfo"></span></small></div>
+          <div class="ctl"><span class="muted" style="font-size:12px">below</span><input class="in" id="botBelow" type="number" min="0" max="20" style="width:56px" onchange="saveDash()" title="levels below your character"><span class="muted" style="font-size:12px">above</span><input class="in" id="botAbove" type="number" min="0" max="20" style="width:56px" onchange="saveDash()" title="levels above your character"><label class="tg"><input type="checkbox" id="botSyncTg" onchange="saveDash()"><span></span></label></div></div>
         <div class="row"><div class="lab"><b>Daily restart</b><small>Restarts the server once a day so bots re-sync to your level. The dashboard must be running and the PC awake at that time; a missed time is skipped, not run later.<span id="restartInfo"></span></small></div>
           <div class="ctl"><input class="in" id="restartTime" type="time" style="width:110px" onchange="saveDash()"><label class="tg"><input type="checkbox" id="restartTg" onchange="saveDash()"><span></span></label></div></div>
         <div class="row"><div class="lab"><b>Skip the daily restart if someone is logged in</b><small>Off: players get a 10-minute in-game countdown, then the restart. Characters are saved first either way.</small></div>
@@ -516,7 +516,7 @@ async function loadSettings(){
         document.querySelector(`.row[data-k="${CSS.escape(key(d))}"]`).classList.toggle('changed', !!changes[key(d)]); renderSaveBar(); };
       if(rg){ rg.oninput=()=>{ el.value=rg.value; upd(); }; el.oninput=()=>{ rg.value=el.value; upd(); }; } else el.onchange=upd;
     });
-    const dc=r.dash; $('#raUser').value=dc.raUser||''; $('#raPass').placeholder=dc.raPassSet?'•••••• (saved)':'password'; $('#autosaveTg').checked=dc.startAutosave; $('#hideTg').checked=dc.hideWindows; $('#botSyncTg').checked=dc.botLevelSync; $('#restartTg').checked=dc.restartDaily; $('#restartTime').value=dc.restartTime||'04:00'; $('#restartSkipTg').checked=dc.restartSkipPlayers; $('#kickStuckTg').checked=dc.autoKickStuck; $('#restartInfo').textContent=dc.nextRestart?(' Next: '+dc.nextRestart):''; $('#botRange').value=dc.botLevelRange||5; $('#botSyncInfo').textContent=dc.botSync?(' Last start: '+dc.botSync):''; $('#logFilters').value=(dc.logFilters||[]).join('\n');
+    const dc=r.dash; $('#raUser').value=dc.raUser||''; $('#raPass').placeholder=dc.raPassSet?'•••••• (saved)':'password'; $('#autosaveTg').checked=dc.startAutosave; $('#hideTg').checked=dc.hideWindows; $('#botSyncTg').checked=dc.botLevelSync; $('#restartTg').checked=dc.restartDaily; $('#restartTime').value=dc.restartTime||'04:00'; $('#restartSkipTg').checked=dc.restartSkipPlayers; $('#kickStuckTg').checked=dc.autoKickStuck; $('#restartInfo').textContent=dc.nextRestart?(' Next: '+dc.nextRestart):''; $('#botBelow').value=dc.botLevelBelow??5; $('#botAbove').value=dc.botLevelAbove??5; $('#botSyncInfo').textContent=dc.botSync?(' Last start: '+dc.botSync):''; $('#logFilters').value=(dc.logFilters||[]).join('\n');
     renderSaveBar();
   }catch(e){ toast(e.message,'err'); }
 }
@@ -527,7 +527,7 @@ async function saveSettings(){
   catch(e){ toast(e.message,'err'); }
 }
 async function saveDash(){
-  const body={ raUser:$('#raUser').value.trim(), startAutosave:$('#autosaveTg').checked, hideWindows:$('#hideTg').checked, botLevelSync:$('#botSyncTg').checked, restartDaily:$('#restartTg').checked, restartTime:$('#restartTime').value, restartSkipPlayers:$('#restartSkipTg').checked, autoKickStuck:$('#kickStuckTg').checked, botLevelRange:+$('#botRange').value||5, logFilters:$('#logFilters').value.split('\n').map(s=>s.trim()).filter(Boolean) };
+  const body={ raUser:$('#raUser').value.trim(), startAutosave:$('#autosaveTg').checked, hideWindows:$('#hideTg').checked, botLevelSync:$('#botSyncTg').checked, restartDaily:$('#restartTg').checked, restartTime:$('#restartTime').value, restartSkipPlayers:$('#restartSkipTg').checked, autoKickStuck:$('#kickStuckTg').checked, botLevelBelow:+$('#botBelow').value, botLevelAbove:+$('#botAbove').value, logFilters:$('#logFilters').value.split('\n').map(s=>s.trim()).filter(Boolean) };
   if($('#raPass').value) body.raPass=$('#raPass').value;
   try{ await api('/api/dashcfg',body); $('#raPass').value=''; toast('Dashboard settings saved.','ok'); loadSettings(); poll(); }catch(e){ toast(e.message,'err'); }
 }
