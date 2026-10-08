@@ -35,6 +35,11 @@ Local web control panel for **SPP Classics V2 (WotLK 3.3.5a, cmangos + ike3 play
 - Original conf values saved in `botOrig`; turning the option off restores them at the next start.
 - Verified live 2026-10-06: first start re-rolled gradually (11-20 online went 93 → 300 within minutes), 0 DKs online.
 
+- Range is `botLevelBelow` / `botLevelAbove` (fallback: symmetric `botLevelRange`); user uses 1 below / 5 above.
+- Not live: `.reload config` (RA, works for mangosd.conf rates) does NOT re-read aiplayerbot.conf
+  (`sPlayerbotAIConfig.Initialize()` only runs in `World::SetInitialWorldSettings`). `.bot reload` would, but `bot` is
+  in-game only; `rndbot` (init/refresh/...) is console-allowed. User chose restarting every ~2 levels instead.
+
 ## Daily restart (`restartDaily`, `restartTime` HH:mm, `restartSkipPlayers`, `restartWarn` min, `restartLast`)
 - `Check-Schedule` runs from `Tick` (idle, world running). Fires once per day within 30 min of the time, else
   skips to tomorrow; `restartLast` = date of the last run/skip. Uses `Begin-Stop -Restart` (5 s with nobody on,
