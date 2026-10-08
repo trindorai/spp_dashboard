@@ -131,7 +131,10 @@ that leaves the converted buttons empty.
   and such runs give no Random reward. Leave the group and form a new one before you queue again.
 - **Known playerbots crashes** of the world server, for example `ai::Engine::Reset` and `BindToInstance`. They're bugs
   in the bot module. The watchdog restarts the server, and the Crashes tab names them.
-- With `lfg` in a chat channel, every bot within ±4 levels of you, anywhere in the world, tries to join.
+- `lfg` in any chat channel (/1, /4, …) reaches every random bot of your faction online **anywhere in the world**.
+  The server forwards channel messages to the bot manager without the channel name. Bots within ±4 levels
+  then try to join, even from other zones. For nearby bots use `/s lfg` (25 yards) or `/y lfg` (300 yards,
+  same continent).
 
 ## Notes
 
