@@ -451,7 +451,8 @@ $CrashHints = @(
   @{ p = 'EffectTeleportUnits'; t = 'A portal-type object cast a teleport with no facing set. fix_portal_teleports.sql in Tweaks covers the known portals - if this happened after applying it, a portal not on that list triggered it.' },
   @{ p = 'BindToInstance'; t = 'A bot crashed while being saved to a dungeon instance lock (known bot bug, often right after a teleport into a dungeon).' },
   @{ p = 'ai::Engine::Reset'; t = 'A bot''s AI was reset during a random teleport (scheduled strategy change) and its action lists were already broken. Known playerbots instability, random - not caused by a setting. More likely right after a start while many bots re-roll their level.' },
-  @{ p = 'guardAI::JustDied'; t = 'A town guard was killed by a damage-over-time effect whose caster had vanished (bot logged out, teleported or was re-rolled). Server bug in guard_ai.cpp; more likely right after a start that re-rolls many bots.' },
+  @{ p = 'SetAvoidAreaAction'; t = 'A bot''s "avoid mobs" strategy wrote mob areas into the shared navigation mesh while other threads used it. Disabled via -avoid mobs in the bot default strategies (aiplayerbot.conf, from the next start).' },
+  @{ p = 'guardAI::JustDied'; t ='A town guard was killed by a damage-over-time effect whose caster had vanished (bot logged out, teleported or was re-rolled). Server bug in guard_ai.cpp; more likely right after a start that re-rolls many bots.' },
   @{ p = 'GetCharmerGuid'; t = 'A unit referenced a caster/owner that no longer exists (usually bot-related).' }
 )
 function Parse-Crash([System.IO.FileInfo]$f, [switch]$Full) {
