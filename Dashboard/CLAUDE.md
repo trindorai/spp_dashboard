@@ -45,6 +45,9 @@ Local web control panel for **SPP Classics V2 (WotLK 3.3.5a, cmangos + ike3 play
   (AiFactory: `IsRealPlayer() || IsFreeBot()`). Party default: `+custom::say,+threat,-flee,-kite,-flee from adds,-runaway,-ranged`.
 - Casters "running around" comes from the `ranged` strategy (`enemy too close for spell` -> `flee`, plus keeping max
   range), not just `flee`. `-ranged` stops it; casters then rely on following the player to stay in range.
+- `-avoid mobs` in all four (Random)Bot(Non)CombatStrategies since 2026-10-09: its `SetAvoidAreaAction` writes mob
+  areas into the shared navmesh (`PathFinder::setArea`) from map worker threads and crashed twice in
+  `dtNavMeshQuery::queryPolygons`. Non-combat defaults kept: random `+custom::say`, party `+return,+delayed roll`.
 
 ## Daily restart (`restartDaily`, `restartTime` HH:mm, `restartSkipPlayers`, `restartWarn` min, `restartLast`)
 - `Check-Schedule` runs from `Tick` (idle, world running). Fires once per day within 30 min of the time, else
