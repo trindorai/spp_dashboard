@@ -40,6 +40,12 @@ Local web control panel for **SPP Classics V2 (WotLK 3.3.5a, cmangos + ike3 play
   (`sPlayerbotAIConfig.Initialize()` only runs in `World::SetInitialWorldSettings`). `.bot reload` would, but `bot` is
   in-game only; `rndbot` (init/refresh/...) is console-allowed. User chose restarting every ~2 levels instead.
 
+## Bot strategy defaults (aiplayerbot.conf, set 2026-10-09)
+- Bots with a real-player master use `AiPlayerbot.CombatStrategies`; free random bots use `RandomBotCombatStrategies`
+  (AiFactory: `IsRealPlayer() || IsFreeBot()`). Party default: `+custom::say,+threat,-flee,-kite,-flee from adds,-runaway,-ranged`.
+- Casters "running around" comes from the `ranged` strategy (`enemy too close for spell` -> `flee`, plus keeping max
+  range), not just `flee`. `-ranged` stops it; casters then rely on following the player to stay in range.
+
 ## Daily restart (`restartDaily`, `restartTime` HH:mm, `restartSkipPlayers`, `restartWarn` min, `restartLast`)
 - `Check-Schedule` runs from `Tick` (idle, world running). Fires once per day within 30 min of the time, else
   skips to tomorrow; `restartLast` = date of the last run/skip. Uses `Begin-Stop -Restart` (5 s with nobody on,
