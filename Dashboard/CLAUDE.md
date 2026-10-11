@@ -49,6 +49,9 @@ Local web control panel for **SPP Classics V2 (WotLK 3.3.5a, cmangos + ike3 play
   areas into the shared navmesh (`PathFinder::setArea`) from map worker threads and crashed twice in
   `dtNavMeshQuery::queryPolygons`. Non-combat defaults kept: random `+custom::say`, party `+return,+delayed roll`.
 
+- `AiPlayerbot.SelfBotLevel = 0` (2026-10-11): default 1 lets GM accounts run the bot AI on their own character
+  (`.bot self`); the user's GM character started moving on its own (server-side path in Server.log).
+
 ## Daily restart (`restartDaily`, `restartTime` HH:mm, `restartSkipPlayers`, `restartWarn` min, `restartLast`)
 - `Check-Schedule` runs from `Tick` (idle, world running). Fires once per day within 30 min of the time, else
   skips to tomorrow; `restartLast` = date of the last run/skip. Uses `Begin-Stop -Restart` (5 s with nobody on,
