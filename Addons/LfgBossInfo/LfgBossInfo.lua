@@ -1,7 +1,10 @@
--- LfgBossInfo (WoW 3.3.5a): when the Dungeon Finder forms a group, say loudly WHICH dungeon it is and which boss
--- completes it. Several dungeons share an entrance (Blackrock Depths Prison / Upper City, Scarlet Monastery wings,
--- Dire Maul wings, Maraudon) and the Random reward only comes from that version's final boss.
--- /lfgboss shows it again. The boss list was generated from the server's instance_encounters table.
+-- LfgBossInfo (WoW 3.3.5a): tells you which boss completes a Dungeon Finder run.
+--  * Specific queue: the invite names the dungeon -> announced right away.
+--  * Random queue: the server only sends "Random ... Dungeon" (retail behaviour), so the dungeon is announced when
+--    you arrive. If the instance has several Dungeon Finder versions (Blackrock Depths, Scarlet Monastery, Dire Maul,
+--    Maraudon), all versions and their final bosses are listed. Blackrock Depths Prison and Upper City even share the
+--    same arrival point, so kill Gerstahn first: if no reward appears, it is Upper City (Emperor Thaurissan).
+-- /lfgboss shows it again. Tables generated from the server's instance_encounters and the client's LFGDungeons.dbc.
 
 local FINAL_BOSS = {
     [1] = "Mutanus the Devourer",
@@ -134,12 +137,111 @@ local FINAL_BOSS = {
 
 }
 
+local DUNGEON_NAME = {
+    [1] = "Wailing Caverns",
+    [2] = "Scholomance",
+    [4] = "Ragefire Chasm",
+    [6] = "Deadmines",
+    [8] = "Shadowfang Keep",
+    [10] = "Blackfathom Deeps",
+    [12] = "Stormwind Stockade",
+    [14] = "Gnomeregan",
+    [16] = "Razorfen Kraul",
+    [18] = "Scarlet Monastery - Graveyard",
+    [20] = "Razorfen Downs",
+    [22] = "Uldaman",
+    [24] = "Zul'Farrak",
+    [26] = "Maraudon - Orange Crystals",
+    [28] = "Sunken Temple",
+    [30] = "Blackrock Depths - Prison",
+    [32] = "Lower Blackrock Spire",
+    [34] = "Dire Maul - East",
+    [36] = "Dire Maul - West",
+    [38] = "Dire Maul - North",
+    [40] = "Stratholme - Main Gate",
+    [136] = "Hellfire Ramparts",
+    [137] = "Blood Furnace",
+    [138] = "Shattered Halls",
+    [140] = "Slave Pens",
+    [146] = "Underbog",
+    [147] = "The Steamvault",
+    [148] = "Mana-Tombs",
+    [149] = "Auchenai Crypts",
+    [150] = "Sethekk Halls",
+    [151] = "Shadow Labyrinth",
+    [163] = "Scarlet Monastery - Armory",
+    [164] = "Scarlet Monastery - Cathedral",
+    [165] = "Scarlet Monastery - Library",
+    [170] = "The Escape From Durnholde",
+    [171] = "The Black Morass",
+    [172] = "The Mechanar",
+    [173] = "The Botanica",
+    [174] = "The Arcatraz",
+    [198] = "Magisters' Terrace",
+    [202] = "Utgarde Keep",
+    [203] = "Utgarde Pinnacle",
+    [204] = "Azjol-Nerub",
+    [206] = "The Oculus",
+    [207] = "Halls of Lightning",
+    [208] = "Halls of Stone",
+    [209] = "The Culling of Stratholme",
+    [214] = "Drak'Tharon Keep",
+    [216] = "Gundrak",
+    [218] = "Ahn'kahet: The Old Kingdom",
+    [220] = "Violet Hold",
+    [225] = "The Nexus",
+    [245] = "Trial of the Champion",
+    [251] = "The Forge of Souls",
+    [253] = "Pit of Saron",
+    [255] = "Halls of Reflection",
+    [272] = "Maraudon - Purple Crystals",
+    [273] = "Maraudon - Pristine Waters",
+    [274] = "Stratholme - Service Entrance",
+    [276] = "Blackrock Depths - Upper City",
+    [285] = "The Headless Horseman",
+    [286] = "The Frost Lord Ahune",
+    [287] = "Coren Direbrew",
+    [288] = "The Crown Chemical Co.",
+    [42] = "Zul'Gurub",
+    [44] = "Upper Blackrock Spire",
+    [46] = "Onyxia's Lair",
+    [48] = "Molten Core",
+    [50] = "Blackwing Lair",
+    [159] = "Naxxramas",
+    [160] = "Ahn'Qiraj Ruins",
+    [161] = "Ahn'Qiraj Temple",
+    [175] = "Karazhan",
+    [176] = "Magtheridon's Lair",
+    [177] = "Gruul's Lair",
+    [193] = "Tempest Keep",
+    [194] = "Serpentshrine Cavern",
+    [195] = "Hyjal Past",
+    [196] = "Black Temple",
+    [197] = "Zul'Aman",
+    [199] = "The Sunwell",
+    [223] = "The Eye of Eternity",
+    [224] = "The Obsidian Sanctum",
+    [227] = "Naxxramas",
+    [237] = "The Eye of Eternity",
+    [238] = "The Obsidian Sanctum",
+    [239] = "Vault of Archavon",
+    [240] = "Vault of Archavon",
+    [243] = "Ulduar",
+    [244] = "Ulduar",
+    [246] = "Trial of the Crusader",
+    [247] = "Trial of the Grand Crusader",
+    [248] = "Trial of the Crusader",
+    [250] = "Trial of the Grand Crusader",
+    [257] = "Onyxia's Lair",
+    [279] = "Icecrown Citadel",
+    [280] = "Icecrown Citadel",
+    [293] = "Ruby Sanctum",
+    [294] = "Ruby Sanctum",
+}
+
 local PREFIX = "|cffe8b84aDungeon Finder:|r "
 
-local function announce(name, id, loud)
-    if not name then return end
-    local boss = id and FINAL_BOSS[id]
-    local msg = boss and string.format("%s - finish by killing %s", name, boss) or name
+local function say(msg, loud)
     DEFAULT_CHAT_FRAME:AddMessage(PREFIX .. msg)
     if loud then
         RaidNotice_AddMessage(RaidWarningFrame, msg, ChatTypeInfo["RAID_WARNING"])
@@ -147,27 +249,69 @@ local function announce(name, id, loud)
     end
 end
 
-local lastId, lastName
-
-local function fromProposal()
-    local ok, exists, typeID, id, name = pcall(GetLFGProposal)
-    if ok and exists and name then lastId, lastName = id, name; return id, name end
+-- all Dungeon Finder versions of the instance we are in: { {name, boss}, ... }
+local function versionsOf(instanceName)
+    local list, seen = {}, {}
+    for id, name in pairs(DUNGEON_NAME) do
+        if (name == instanceName or name:find(instanceName .. " - ", 1, true) == 1) and FINAL_BOSS[id] and not seen[name] then
+            seen[name] = true
+            table.insert(list, { name, FINAL_BOSS[id] })
+        end
+    end
+    table.sort(list, function(a, b) return a[1] < b[1] end)
+    return list
 end
 
+local function announceInstance(loud)
+    local inInstance, kind = IsInInstance()
+    if not inInstance or (kind ~= "party" and kind ~= "raid") then
+        say("not inside a dungeon.", false); return
+    end
+    local instanceName = GetInstanceInfo()
+    local list = versionsOf(instanceName or "")
+    if #list == 0 then
+        say((instanceName or "?") .. ": no Dungeon Finder end boss known.", false)
+    elseif #list == 1 then
+        say(list[1][1] .. " - finish by killing " .. list[1][2], loud)
+    else
+        say(instanceName .. " has " .. #list .. " Dungeon Finder versions:", loud)
+        for _, v in ipairs(list) do say("   " .. v[1] .. ": " .. v[2], false) end
+        if instanceName == "Blackrock Depths" then
+            say("   Prison and Upper City share one entrance - kill Gerstahn first; no reward = Upper City.", false)
+        else
+            say("   The Dungeon Finder put you at the entrance of the version you got.", false)
+        end
+    end
+end
+
+local announcedFor, specificId
 local f = CreateFrame("Frame")
 f:RegisterEvent("LFG_PROPOSAL_SHOW")
-f:RegisterEvent("LFG_PROPOSAL_SUCCEEDED")
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:SetScript("OnEvent", function(self, event)
     if event == "LFG_PROPOSAL_SHOW" then
-        local id, name = fromProposal()
-        announce(name, id, true)
-    elseif event == "LFG_PROPOSAL_SUCCEEDED" and lastName then
-        announce(lastName, lastId, false)
+        local ok, exists, typeID, id, name = pcall(GetLFGProposal)
+        if ok and exists and id and FINAL_BOSS[id] then
+            specificId = id
+            say((DUNGEON_NAME[id] or name) .. " - finish by killing " .. FINAL_BOSS[id], true)
+        elseif ok and exists then
+            specificId = nil
+            say((name or "Random dungeon") .. " - the server picks the dungeon; it is announced when you arrive.", false)
+        end
+    else
+        -- once per instance visit, a moment after loading so the instance info is ready
+        local inInstance, kind = IsInInstance()
+        if inInstance and (kind == "party" or kind == "raid") then
+            local name = GetInstanceInfo()
+            if name and name ~= announcedFor then
+                announcedFor = name
+                announceInstance(true)
+            end
+        else
+            announcedFor = nil
+        end
     end
 end)
 
 SLASH_LFGBOSSINFO1 = "/lfgboss"
-SlashCmdList["LFGBOSSINFO"] = function()
-    if lastName then announce(lastName, lastId, false)
-    else DEFAULT_CHAT_FRAME:AddMessage(PREFIX .. "no Dungeon Finder group formed yet this session.") end
-end
+SlashCmdList["LFGBOSSINFO"] = function() announceInstance(false) end
