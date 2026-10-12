@@ -1,0 +1,4 @@
+## Interface: 30300
+## Title: LfgBossInfo
+## Notes: Shows which dungeon the Dungeon Finder picked and the boss that completes it. /lfgboss
+LfgBossInfo.lua

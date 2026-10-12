@@ -119,6 +119,15 @@ To install, copy `Addons\StartAttackMacros` into your 3.3.5a client's `Interface
 After `/sam`, **type `/reload`**. The client only saves new macros on `/reload` or a clean logout, and a crash before
 that leaves the converted buttons empty.
 
+## LfgBossInfo (client addon)
+
+When the Dungeon Finder forms a group, it shows a raid warning and a chat line with the **exact dungeon** and the
+**boss that completes it**, for example "Blackrock Depths - Upper City - finish by killing Emperor Dagran
+Thaurissan". This matters because some dungeons share one entrance: Blackrock Depths Prison / Upper City, the
+Scarlet Monastery and Dire Maul wings, Maraudon. The Random reward only comes from the final boss of the version you
+were given. `/lfgboss` shows it again. The boss list is generated from the server's `instance_encounters` table.
+Install it the same way as StartAttackMacros.
+
 ## Known issues
 
 - **The client crashes on every chat line (ERROR #132 at `0x00530475`) and you can't move.** This comes from a bug
