@@ -121,11 +121,13 @@ that leaves the converted buttons empty.
 
 ## LfgBossInfo (client addon)
 
-When the Dungeon Finder forms a group, it shows a raid warning and a chat line with the **exact dungeon** and the
-**boss that completes it**, for example "Blackrock Depths - Upper City - finish by killing Emperor Dagran
-Thaurissan". This matters because some dungeons share one entrance: Blackrock Depths Prison / Upper City, the
-Scarlet Monastery and Dire Maul wings, Maraudon. The Random reward only comes from the final boss of the version you
-were given. `/lfgboss` shows it again. The boss list is generated from the server's `instance_encounters` table.
+Shows a raid warning with the **boss that completes** your Dungeon Finder run. For a specific queue it does this
+when the group forms. For a Random queue it waits until you arrive, because the server only tells the client
+"Random ... Dungeon". If the dungeon has several Dungeon Finder versions (Scarlet Monastery and Dire Maul wings,
+Maraudon, Blackrock Depths Prison / Upper City), the addon lists every version with its final boss. The Random
+reward only comes from the final boss of the version you were given. Blackrock Depths Prison and Upper City even
+share the same arrival point, so kill Gerstahn first: if no reward appears, it's Upper City (Emperor Thaurissan).
+`/lfgboss` shows it again. The boss list is generated from the server's `instance_encounters` table.
 Install it the same way as StartAttackMacros.
 
 ## Known issues
