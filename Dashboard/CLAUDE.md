@@ -52,6 +52,12 @@ Local web control panel for **SPP Classics V2 (WotLK 3.3.5a, cmangos + ike3 play
 - `AiPlayerbot.SelfBotLevel = 0` (2026-10-11): default 1 lets GM accounts run the bot AI on their own character
   (`.bot self`); the user's GM character started moving on its own (server-side path in Server.log).
 
+## Start tweaks queue
+- `startTweaks` in dashboard.json: list like `["MyTweaks/file.sql"]`. `Run-StartTweaks` runs them in the start flow
+  right before `Sync-BotLevels`/`Start-World` (DB up, mangosd down) and keeps only the ones that failed. Use it for
+  SQL that must run while the world server is stopped (bot timer resets). No UI yet - edit the json while the
+  dashboard is stopped (it rewrites the file on every settings save).
+
 ## Daily restart (`restartDaily`, `restartTime` HH:mm, `restartSkipPlayers`, `restartWarn` min, `restartLast`)
 - `Check-Schedule` runs from `Tick` (idle, world running). Fires once per day within 30 min of the time, else
   skips to tomorrow; `restartLast` = date of the last run/skip. Uses `Begin-Stop -Restart` (5 s with nobody on,
