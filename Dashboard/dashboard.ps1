@@ -31,7 +31,7 @@ if ([System.IO.Path]::DirectorySeparatorChar -eq '/') {
 function Load-Cfg {
     $d = @{ port = 8099; raUser = ''; raPass = ''; watchdog = $false; startAutosave = $true; hideWindows = $true; botLevelSync = $false; botLevelRange = 5; botLevelBelow = $null; botLevelAbove = $null;
             restartDaily = $false; restartTime = '04:00'; restartSkipPlayers = $true; restartWarn = 10; restartLast = '';
-            autoKickStuck = $true;
+            autoKickStuck = $true; startTweaks = @();
             logFilters = @('spell #75460','Path empty','game_graveyard_zone','already existing cooldown','lost references','too far away from player','MoveSplineInitArgs') }
     if (Test-Path $CfgFile) {
         try {
@@ -295,6 +295,22 @@ $dkOut
     $dkNote = if ($noDk) { ' Death knights are kept offline until the range reaches 55.' } else { '' }
     return "Bots set to levels $min-$max (around $name, level $lvl): $count will re-roll as they log in.$dkNote"
 }
+# One-shot SQL tweaks that need the world server stopped (e.g. bot timer resets): queued in dashboard.json
+# (startTweaks = ["MyTweaks/file.sql", ...]) and applied during the next start, right before mangosd loads.
+function Run-StartTweaks {
+    $queue = @($Cfg.startTweaks | Where-Object { $_ })
+    if ($queue.Count -eq 0) { return $null }
+    $done = New-Object System.Collections.ArrayList; $left = New-Object System.Collections.ArrayList
+    foreach ($item in $queue) {
+        $parts = ([string]$item) -split '[\\/]', 2
+        try { $r = Apply-Tweak $parts[1] $parts[0]; if ($r.ok) { [void]$done.Add($item) } else { [void]$left.Add($item) } }
+        catch { [void]$left.Add($item) }
+    }
+    $Cfg.startTweaks = @($left); Save-Cfg
+    $msg = 'Start tweaks applied: ' + ($done -join ', ')
+    if ($left.Count) { $msg += '; failed (kept for next start): ' + ($left -join ', ') }
+    return $msg
+}
 function Begin-Start {
     if (Get-SppProc 'mangosd') { throw 'World server is already running.' }
     if ($State.action -ne 'idle') { throw ('Busy: ' + $State.message) }
@@ -378,6 +394,7 @@ function Tick {
                 elseif ($elapsed -gt 60) { Set-Action 'idle' '' 'Database did not start within 60 s.' }
             } elseif ($State.step -eq 'realm') {
                 if (-not $world) {
+                    try { $t = Run-StartTweaks; if ($t) { Write-Host $t } } catch { Write-Host ('start tweaks failed: ' + $_.Exception.Message) }
                     try { $m = Sync-BotLevels; if ($m) { $State.botSync = $m; Write-Host $m } } catch { $State.botSync = 'Bot level sync failed: ' + $_.Exception.Message; Write-Host $State.botSync }
                     Start-World
                 }
